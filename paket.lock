@@ -2,6 +2,7 @@ REDIRECTS: ON
 NUGET
   remote: http://api.nuget.org/v3/index.json
   specs:
+    FAKE.x64 (4.10.4)
     FSharp.Core (4.0.0.1)
     Microsoft.ServiceFabric (4.4.87-preview)
     Microsoft.ServiceFabric.Actors (1.4.87-preview)

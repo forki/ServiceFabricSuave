@@ -8,7 +8,7 @@ open System.Threading.Tasks
 open Suave.Http
 open Microsoft.ServiceFabric.Services.Runtime
 open Microsoft.ServiceFabric.Services.Communication.Runtime
-
+ 
 type SuaveService() =
     inherit StatelessService()
 
