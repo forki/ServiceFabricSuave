@@ -141,13 +141,25 @@ let invoke (modules : string []) (ps : PowerShell) =
     let runspace = RunspaceFactory.CreateRunspace initial
     runspace.Open ()
     ps.Runspace <- runspace
-    ps.Invoke() |> Seq.iter (printfn "%A")
-    runspace
+    try
+        ps.Invoke() |> Seq.iter (printfn "%A")
+        runspace
+    with
+    | ex ->
+        ps.Streams.Error |> Seq.iter (sprintf "%O" >> traceError)
+        traceError ex.Message
+        raise ex
 
 let invokeWithRunspace runspace (ps : PowerShell) =
     ps.Runspace <- runspace
-    ps.Invoke() |> Seq.iter (printfn "%A")
-    runspace
+    try
+        ps.Invoke() |> Seq.iter (printfn "%A")
+        runspace
+    with
+    | ex ->
+        ps.Streams.Error |> Seq.iter (sprintf "%O" >> traceError)
+        traceError ex.Message
+        raise ex
 
 let psCommand (command : string) =
     PowerShell.Create().AddCommand command
@@ -174,7 +186,7 @@ let remove runspace =
         |> invokeWithRunspace runspace
         |> ignore
     with
-    | ex -> traceImportant ex.Message
+    | ex -> ()
     traceHeader "Remove Application Type"
     try
         "Unregister-ServiceFabricApplicationType"
@@ -185,7 +197,7 @@ let remove runspace =
         |> invokeWithRunspace runspace
         |> ignore
     with
-    | ex -> traceImportant ex.Message
+    | ex -> ()
 
 let deploy runspace =
     traceHeader "Publish Application"
