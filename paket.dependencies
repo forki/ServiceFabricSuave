@@ -8,3 +8,4 @@ nuget Suave
 nuget FAKE.x64
 nuget Fuchu
 nuget Fuchu.FsCheck
+nuget Http.fs

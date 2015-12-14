@@ -99,6 +99,13 @@
   <Target Name="AfterBuild">
   </Target>
   -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\CalculatorService\CalculatorService.fsproj">
+      <Name>CalculatorService</Name>
+      <Project>{bf06b852-a177-4d39-b14f-1753c7bfbb86}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+  </ItemGroup>
   <Choose>
     <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.5.1' Or $(TargetFrameworkVersion) == 'v4.5.2' Or $(TargetFrameworkVersion) == 'v4.5.3' Or $(TargetFrameworkVersion) == 'v4.6' Or $(TargetFrameworkVersion) == 'v4.6.1')">
       <ItemGroup>
@@ -150,12 +157,5 @@
       <Private>True</Private>
       <Paket>True</Paket>
     </Reference>
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\src\CalculatorService\CalculatorService.fsproj">
-      <Name>CalculatorService</Name>
-      <Project>{bf06b852-a177-4d39-b14f-1753c7bfbb86}</Project>
-      <Private>True</Private>
-    </ProjectReference>
   </ItemGroup>
 </Project>

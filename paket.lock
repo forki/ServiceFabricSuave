@@ -12,6 +12,7 @@ NUGET
       FsCheck (>= 2.2.2)
       FSharp.Core (>= 3.1.2.5)
       Fuchu (>= 1.0.2)
+    Http.fs (1.5.1)
     Microsoft.ServiceFabric (4.4.87-preview)
     Microsoft.ServiceFabric.Actors (1.4.87-preview)
       Microsoft.ServiceFabric (4.4.87-preview)

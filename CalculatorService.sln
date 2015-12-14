@@ -23,6 +23,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "CalculatorService.UnitTests
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{42B8F84B-844E-42B2-AE0B-442E6EE87E3F}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "CalculatorService.IntegrationTests", "test\CalculatorService.IntegrationTests\CalculatorService.IntegrationTests.fsproj", "{35C66EF2-AE46-4B14-856D-4EF38D497510}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -59,11 +61,20 @@ Global
 		{616BF55F-2DC0-4838-A21D-7B862D551EB3}.Release|Any CPU.Build.0 = Release|x64
 		{616BF55F-2DC0-4838-A21D-7B862D551EB3}.Release|x64.ActiveCfg = Release|Any CPU
 		{616BF55F-2DC0-4838-A21D-7B862D551EB3}.Release|x64.Build.0 = Release|Any CPU
+		{35C66EF2-AE46-4B14-856D-4EF38D497510}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{35C66EF2-AE46-4B14-856D-4EF38D497510}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{35C66EF2-AE46-4B14-856D-4EF38D497510}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{35C66EF2-AE46-4B14-856D-4EF38D497510}.Debug|x64.Build.0 = Debug|Any CPU
+		{35C66EF2-AE46-4B14-856D-4EF38D497510}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{35C66EF2-AE46-4B14-856D-4EF38D497510}.Release|Any CPU.Build.0 = Release|Any CPU
+		{35C66EF2-AE46-4B14-856D-4EF38D497510}.Release|x64.ActiveCfg = Release|Any CPU
+		{35C66EF2-AE46-4B14-856D-4EF38D497510}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{616BF55F-2DC0-4838-A21D-7B862D551EB3} = {42B8F84B-844E-42B2-AE0B-442E6EE87E3F}
+		{35C66EF2-AE46-4B14-856D-4EF38D497510} = {42B8F84B-844E-42B2-AE0B-442E6EE87E3F}
 	EndGlobalSection
 EndGlobal

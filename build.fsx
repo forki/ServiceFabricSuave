@@ -37,9 +37,10 @@ let pkgDir = "temp" </> "pkg"
 let hostPkgDir = "src" </> "FabricHost" </> "pkg" </> "Release"
 let buildDir = "temp" </> "build"
 let unitTestBuildDir = "temp" </> "unitTest"
+let integrationTestBuildDir = "temp" </> "integrationTest"
 
 Target "Clean" (fun _ ->
-    CleanDirs [unitTestBuildDir; buildDir; pkgDir]
+    CleanDirs [integrationTestBuildDir; unitTestBuildDir; buildDir; pkgDir]
 )
 
 // --------------------------------------------------------------------------------------
@@ -63,7 +64,7 @@ Target "AssemblyInfo" (fun _ ->
           (getAssemblyInfoAttributes projectName)
         )
 
-    !! "src/**/*.fsproj"
+    !! "*/**/*.fsproj"
     |> Seq.map getProjectDetails
     |> Seq.iter (fun (projFileName, projectName, folderName, attributes) ->  CreateFSharpAssemblyInfo (folderName @@ "AssemblyInfo.fs") attributes)
 )
@@ -95,6 +96,24 @@ Target "BuildUnitTest" (fun _ ->
 Target "RunUnitTest" (fun _ ->
     let errorCode = 
         !! "temp/unitTest/*UnitTests.exe"
+        |> Seq.map (fun p -> shellExec {defaultParams with Program = p})
+        |> Seq.sum
+    if errorCode <> 0 then failwith "Error in tests"
+)
+
+// --------------------------------------------------------------------------------------
+// Integration Tests
+// --------------------------------------------------------------------------------------
+
+Target "BuildIntegrationTest" (fun _ ->
+    !! "test/*/*IntegrationTests.fsproj"
+    |> MSBuildRelease integrationTestBuildDir "Rebuild"
+    |> ignore
+)
+
+Target "RunIntegrationTest" (fun _ ->
+    let errorCode = 
+        !! "temp/integration/*IntegrationTests.exe"
         |> Seq.map (fun p -> shellExec {defaultParams with Program = p})
         |> Seq.sum
     if errorCode <> 0 then failwith "Error in tests"
@@ -198,6 +217,10 @@ Target "Default" DoNothing
   ==> "RunUnitTest"
 
 "Clean"
+  ==> "BuildIntegrationTest"
+  ==> "RunIntegrationTest"
+
+"Clean"
   ==> "AssemblyInfo"
   ==> "SetVersion"
   ==> "RunUnitTest"
@@ -208,6 +231,7 @@ Target "Default" DoNothing
 
 "Package"
   ==> "DeployLocal"
+  ==> "RunIntegrationTest"
   ==> "Default"
 
 
