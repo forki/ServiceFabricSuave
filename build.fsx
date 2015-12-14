@@ -2,7 +2,7 @@
 // FAKE build script
 // --------------------------------------------------------------------------------------
 
-#r @"packages/FAKE/tools/FakeLib.dll"
+#r @"packages/FAKE.x64//tools/FakeLib.dll"
 #r "System.Management.Automation"
 #r "System.Core.dll"
 #load "paket-files/fsharp/FAKE/modules/Octokit/Octokit.fsx"
