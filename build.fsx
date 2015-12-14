@@ -164,6 +164,9 @@ let invokeWithRunspace runspace (ps : PowerShell) =
 let psCommand (command : string) =
     PowerShell.Create().AddCommand command
 
+let psScript (script : string) =
+    PowerShell.Create().AddScript script
+
 let psAddParameter (n,v) (ps : PowerShell) =
     ps.AddParameter(n,v)
 
@@ -220,13 +223,17 @@ let getCluster () =
 
 Target "StartLocalCluster" (fun _ ->
     traceHeader "Start Cluster"
-    let modules =
-        [| programFiles + @"/Microsoft SDKs/Service Fabric/Tools/Scripts/ClusterSetupUtilities.psm1"
-           programFiles + @"/Microsoft SDKs/Service Fabric/Tools/Scripts/DefaultLocalClusterSetup.psm1" |]
-    "Set-LocalClusterReady"
-    |> psCommand
-    |> invoke modules
+    programFiles + @"/Microsoft SDKs/Service Fabric/ClusterSetup/DevClusterSetup.ps1"
+    |> psScript
+    |> invoke [||]
     |> ignore
+    // let modules =
+    //     [| programFiles + @"/Microsoft SDKs/Service Fabric/Tools/Scripts/ClusterSetupUtilities.psm1"
+    //        programFiles + @"/Microsoft SDKs/Service Fabric/Tools/Scripts/DefaultLocalClusterSetup.psm1" |]
+    // "Set-LocalClusterReady"
+    // |> psCommand
+    // |> invoke modules
+    // |> ignore
 )
 
 Target "RemoveFromLocal" (fun _ ->
