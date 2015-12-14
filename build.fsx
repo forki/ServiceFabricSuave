@@ -267,10 +267,12 @@ Target "Release" (fun _ ->
 Target "Default" DoNothing
 
 "Clean"
+  ==> "AssemblyInfo"
   ==> "BuildUnitTest"
   ==> "RunUnitTest"
 
 "Clean"
+  ==> "AssemblyInfo"
   ==> "BuildIntegrationTest"
   ==> "RunIntegrationTest"
 
