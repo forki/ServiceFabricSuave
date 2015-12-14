@@ -19,6 +19,15 @@ open System.Management.Automation.Runspaces
 let applicationName = "fabric:/CalculatorService"
 let applicationType = "CalculatorServiceType"
 let applicationVersion = "1.0.0.0" //TODO: THIS SHOULD BE HANDLED SMARTER
+let release = LoadReleaseNotes "RELEASE_NOTES.md"
+
+let project = "CalculatorService"
+let summary = "Demo of F# Suave based Service Fabric stateless service"
+
+
+// --------------------------------------------------------------------------------------
+// Building and packaging
+// --------------------------------------------------------------------------------------
 
 let pkgDir = "temp" </> "pkg"
 let hostPkgDir = "src" </> "FabricHost" </> "pkg" </> "Release"
@@ -26,6 +35,27 @@ let buildDir = "temp" </> "build"
 
 Target "Clean" (fun _ ->
     CleanDirs [buildDir; pkgDir]
+)
+
+Target "AssemblyInfo" (fun _ ->
+    let getAssemblyInfoAttributes projectName =
+        [ Attribute.Title (projectName)
+          Attribute.Product project
+          Attribute.Description summary
+          Attribute.Version release.AssemblyVersion
+          Attribute.FileVersion release.AssemblyVersion ]
+
+    let getProjectDetails projectPath =
+        let projectName = System.IO.Path.GetFileNameWithoutExtension(projectPath)
+        ( projectPath,
+          projectName,
+          System.IO.Path.GetDirectoryName(projectPath),
+          (getAssemblyInfoAttributes projectName)
+        )
+
+    !! "src/**/*.fsproj"
+    |> Seq.map getProjectDetails
+    |> Seq.iter (fun (projFileName, projectName, folderName, attributes) ->  CreateFSharpAssemblyInfo (folderName @@ "AssemblyInfo.fs") attributes)
 )
 
 Target "Package" (fun _ ->
@@ -36,7 +66,9 @@ Target "Package" (fun _ ->
     CopyDir pkgDir hostPkgDir  (fun _ -> true)
 )
 
-//PowerShell Helpers
+// --------------------------------------------------------------------------------------
+// PowerShell Helpers
+// --------------------------------------------------------------------------------------
 
 let invoke (modules : string []) (ps : PowerShell) =
     let initial = InitialSessionState.CreateDefault ()
@@ -58,14 +90,11 @@ let psCommand (command : string) =
 let psAddParameter (n,v) (ps : PowerShell) =
     ps.AddParameter(n,v)
 
-//Service Fabric Helpers
+// --------------------------------------------------------------------------------------
+// Service Fabric Helpers
+// --------------------------------------------------------------------------------------
 
 let modules = [| @"C:/Program Files/Microsoft SDKs/Service Fabric/Tools/PSModule/ServiceFabricSDK/ServiceFabricSDK.psm1" |]
-let localRunspace =
-    "Connect-ServiceFabricCluster"
-    |> psCommand
-    |> psAddParameter ("ConnectionEndpoint", "localhost:19000")
-    |> invoke modules
 
 let remove runspace =
     try
@@ -96,12 +125,20 @@ let deploy runspace =
         |> invokeWithRunspace runspace
         |> ignore
 
-//Local Deployment
+// --------------------------------------------------------------------------------------
+// Local Deployment
+// --------------------------------------------------------------------------------------
+
+let localRunspace =
+    "Connect-ServiceFabricCluster"
+    |> psCommand
+    |> psAddParameter ("ConnectionEndpoint", "localhost:19000")
+    |> invoke modules
 
 Target "StartLocalCluster" (fun _ ->
-    let modules = [| @"C:/Program Files/Microsoft SDKs/Service Fabric/Tools/Scripts/ClusterSetupUtilities.psm1"
-                     @"C:/Program Files/Microsoft SDKs/Service Fabric/Tools/Scripts/DefaultLocalClusterSetup.psm1"
-                  |]
+    let modules =
+        [|  @"C:/Program Files/Microsoft SDKs/Service Fabric/Tools/Scripts/ClusterSetupUtilities.psm1"
+            @"C:/Program Files/Microsoft SDKs/Service Fabric/Tools/Scripts/DefaultLocalClusterSetup.psm1" |]
     "Set-LocalClusterReady"
     |> psCommand
     |> invoke modules
@@ -112,9 +149,14 @@ Target "RemoveFromLocal" (fun _ -> remove localRunspace)
 
 Target "DeployLocal" (fun _ -> deploy localRunspace)
 
+// --------------------------------------------------------------------------------------
+// General FAKE stuff
+// --------------------------------------------------------------------------------------
+
 Target "Default" DoNothing
 
 "Clean"
+  ==> "AssemblyInfo"
   ==> "Package"
 
 "RemoveFromLocal"
