@@ -1,5 +1,6 @@
 install:
   - Webpicmd /install /products:"MicrosoftAzure-ServiceFabric" /AcceptEULA
+  - Webpicmd /install /products:"WindowsAzurePowerShell" /AcceptEULA
 build_script:
   - cmd: build.cmd RunIntegrationTest
 test: off
