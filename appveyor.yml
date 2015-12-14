@@ -1,7 +1,7 @@
 install:
   - Webpicmd /install /products:"MicrosoftAzure-ServiceFabric" /AcceptEULA
 before_build:
-  - cmd: SET PATH=%PATH%;"C:\Program Files\Microsoft Service Fabric\bin\Fabric\Fabric.Code"
+  - cmd: SET PATH=%PATH%;C:\\Program Files\\Microsoft Service Fabric\\bin\\Fabric\\Fabric.Code
 build_script:
   - cmd: build.cmd RunIntegrationTest
 test: off
