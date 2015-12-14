@@ -165,7 +165,7 @@ let modules = [| programFiles + @"/Microsoft SDKs/Service Fabric/Tools/PSModule/
 let remove runspace =
     let version = if releaseHistory.Length > 1 then releaseHistory.Tail.Head.AssemblyVersion else "1.0.0"
     let applicationType = "CalculatorApplicationType" // this can be read from ApplicationManifest.xml
-
+    traceHeader "Remove Application"
     try
         "Remove-ServiceFabricApplication"
         |> psCommand
@@ -175,6 +175,7 @@ let remove runspace =
         |> ignore
     with
     | ex -> traceImportant ex.Message
+    traceHeader "Remove Application Type"
     try
         "Unregister-ServiceFabricApplicationType"
         |> psCommand
@@ -187,6 +188,7 @@ let remove runspace =
     | ex -> traceImportant ex.Message
 
 let deploy runspace =
+    traceHeader "Publish Application"
     "Publish-NewServiceFabricApplication"
         |> psCommand
         |> psAddParameter ("ApplicationPackagePath", pkgDir)
@@ -194,17 +196,18 @@ let deploy runspace =
         |> invokeWithRunspace runspace
         |> ignore
 
-// --------------------------------------------------------------------------------------
-// Local Deployment
-// --------------------------------------------------------------------------------------
-
-let localRunspace =
+let getCluster () =
     "Connect-ServiceFabricCluster"
     |> psCommand
     |> psAddParameter ("ConnectionEndpoint", "localhost:19000")
     |> invoke modules
 
+// --------------------------------------------------------------------------------------
+// Local Deployment
+// --------------------------------------------------------------------------------------
+
 Target "StartLocalCluster" (fun _ ->
+    traceHeader "Start Cluster"
     let modules =
         [| programFiles + @"/Microsoft SDKs/Service Fabric/Tools/Scripts/ClusterSetupUtilities.psm1"
            programFiles + @"/Microsoft SDKs/Service Fabric/Tools/Scripts/DefaultLocalClusterSetup.psm1" |]
@@ -214,9 +217,20 @@ Target "StartLocalCluster" (fun _ ->
     |> ignore
 )
 
-Target "RemoveFromLocal" (fun _ -> remove localRunspace)
+Target "RemoveFromLocal" (fun _ ->
+    "Connect-ServiceFabricCluster"
+    |> psCommand
+    |> psAddParameter ("ConnectionEndpoint", "localhost:19000")
+    |> invoke modules
+    |> remove
+)
 
-Target "DeployLocal" (fun _ -> deploy localRunspace)
+Target "DeployLocal" (fun _ ->
+    "Connect-ServiceFabricCluster"
+    |> psCommand
+    |> psAddParameter ("ConnectionEndpoint", "localhost:19000")
+    |> invoke modules
+    |> deploy)
 
 // --------------------------------------------------------------------------------------
 // Release version to GitHub
@@ -283,7 +297,8 @@ Target "Default" DoNothing
   ==> "RunUnitTest"
   ==> "Package"
 
-"RemoveFromLocal"
+"StartLocalCluster"
+  ==> "RemoveFromLocal"
   ==> "DeployLocal"
 
 "Package"
