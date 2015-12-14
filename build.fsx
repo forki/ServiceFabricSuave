@@ -248,10 +248,11 @@ Target "Release" (fun _ ->
     Branches.tag "" release.NugetVersion
     Branches.pushTag "" remote release.NugetVersion
 
+    let file = !! ("./temp" </> "*.zip") |> Seq.head
     // release on github
     createClient user pw
     |> createDraft gitOwner gitName release.NugetVersion (release.SemVer.PreRelease <> None) release.Notes
-    |> uploadFile (sprintf "temp/%s.zip)" project)
+    |> uploadFile file
     |> releaseDraft
     |> Async.RunSynchronously
 )
