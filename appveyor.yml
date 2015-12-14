@@ -1,0 +1,5 @@
+init:
+  - Webpicmd /install /products:"MicrosoftAzure-ServiceFabric" /AcceptEULA
+build_script:
+  - cmd: build.cmd RunIntegrationTest
+test: off
