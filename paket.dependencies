@@ -9,3 +9,5 @@ nuget FAKE.x64
 nuget Fuchu
 nuget Fuchu.FsCheck
 nuget Http.fs
+
+github fsharp/FAKE modules/Octokit/Octokit.fsx

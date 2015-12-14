@@ -5,12 +5,15 @@
 #r @"packages/FAKE/tools/FakeLib.dll"
 #r "System.Management.Automation"
 #r "System.Core.dll"
+#load "paket-files/fsharp/FAKE/modules/Octokit/Octokit.fsx"
+
 open Fake
 open Fake.Git
 open Fake.AssemblyInfoFile
 open Fake.ReleaseNotesHelper
 open Fake.UserInputHelper
 open Fake.ZipHelper
+open Octokit
 open System
 open System.IO
 open System.Management.Automation
@@ -28,6 +31,14 @@ let applicationName = "fabric:/CalculatorService"
 let release = LoadReleaseNotes "RELEASE_NOTES.md"
 let releaseHistory = File.ReadAllLines "RELEASE_NOTES.md" |> parseAllReleaseNotes
 
+// --------------------------------------------------------------------------------------
+// GitHub configuration
+// --------------------------------------------------------------------------------------
+
+let gitOwner = "Krzysztof-Cieslak"
+let gitHome = "https://github.com/" + gitOwner
+let gitName = "ServiceFabricSuave"
+
 
 // --------------------------------------------------------------------------------------
 // Common
@@ -40,7 +51,7 @@ let unitTestBuildDir = "temp" </> "unitTest"
 let integrationTestBuildDir = "temp" </> "integrationTest"
 
 Target "Clean" (fun _ ->
-    CleanDirs [integrationTestBuildDir; unitTestBuildDir; buildDir; pkgDir]
+    CleanDirs ["temp"; integrationTestBuildDir; unitTestBuildDir; buildDir; pkgDir]
 )
 
 // --------------------------------------------------------------------------------------
@@ -69,7 +80,7 @@ Target "AssemblyInfo" (fun _ ->
     |> Seq.iter (fun (projFileName, projectName, folderName, attributes) ->  CreateFSharpAssemblyInfo (folderName @@ "AssemblyInfo.fs") attributes)
 )
 
-Target "SetVersion" (fun _ -> 
+Target "SetVersion" (fun _ ->
     !! "src/*/*/ServiceManifest.xml"
     ++ "src/*/ApplicationManifest.xml"
     |> RegexReplaceInFilesWithEncoding "Version=\"([\d\.]*)\"" (sprintf "Version=\"%s\"" release.AssemblyVersion) Text.Encoding.UTF8
@@ -94,7 +105,7 @@ Target "BuildUnitTest" (fun _ ->
 )
 
 Target "RunUnitTest" (fun _ ->
-    let errorCode = 
+    let errorCode =
         !! "temp/unitTest/*UnitTests.exe"
         |> Seq.map (fun p -> shellExec {defaultParams with Program = p})
         |> Seq.sum
@@ -112,7 +123,7 @@ Target "BuildIntegrationTest" (fun _ ->
 )
 
 Target "RunIntegrationTest" (fun _ ->
-    let errorCode = 
+    let errorCode =
         !! "temp/integration/*IntegrationTests.exe"
         |> Seq.map (fun p -> shellExec {defaultParams with Program = p})
         |> Seq.sum
@@ -207,6 +218,48 @@ Target "RemoveFromLocal" (fun _ -> remove localRunspace)
 Target "DeployLocal" (fun _ -> deploy localRunspace)
 
 // --------------------------------------------------------------------------------------
+// Release version to GitHub
+// --------------------------------------------------------------------------------------
+
+Target "ZipRelease" (fun _ ->
+    Directory.GetFiles(pkgDir, "*.*", SearchOption.AllDirectories)
+    |> Zip pkgDir ("temp" </> (project + ".sfpkg"))
+)
+
+Target "Release" (fun _ ->
+    let user =
+        match getBuildParam "github-user" with
+        | s when not (String.IsNullOrWhiteSpace s) -> s
+        | _ -> getUserInput "Username: "
+    let pw =
+        match getBuildParam "github-pw" with
+        | s when not (String.IsNullOrWhiteSpace s) -> s
+        | _ -> getUserPassword "Password: "
+    let remote =
+        Git.CommandHelper.getGitResult "" "remote -v"
+        |> Seq.filter (fun (s: string) -> s.EndsWith("(push)"))
+        |> Seq.tryFind (fun (s: string) -> s.Contains(gitOwner + "/" + gitName))
+        |> function None -> gitHome + "/" + gitName | Some (s: string) -> s.Split().[0]
+
+    StageAll ""
+    Git.Commit.Commit "" (sprintf "Bump version to %s" release.NugetVersion)
+    Branches.pushBranch "" remote (Information.getBranchName "")
+
+    Branches.tag "" release.NugetVersion
+    Branches.pushTag "" remote release.NugetVersion
+
+    // release on github
+    createClient user pw
+    |> createDraft gitOwner gitName release.NugetVersion (release.SemVer.PreRelease <> None) release.Notes
+    |> uploadFile (sprintf "temp/%s.sfpkg)" project)
+    |> releaseDraft
+    |> Async.RunSynchronously
+)
+
+
+
+
+// --------------------------------------------------------------------------------------
 // General FAKE stuff
 // --------------------------------------------------------------------------------------
 
@@ -232,7 +285,10 @@ Target "Default" DoNothing
 "Package"
   ==> "DeployLocal"
   ==> "RunIntegrationTest"
-  ==> "Default"
+  ==> "ZipRelease"
+  ==> "Release"
 
+"RunIntegrationTest"
+  ==> "Default"
 
 RunTargetOrDefault "Default"
