@@ -24,23 +24,28 @@ let project = "CalculatorService"
 let summary = "Demo of F# Suave based Service Fabric stateless service"
 
 let applicationName = "fabric:/CalculatorService"
-let applicationType = "CalculatorApplicationType" // this can be read from ApplicationManifest.xml
 
 let release = LoadReleaseNotes "RELEASE_NOTES.md"
 let releaseHistory = File.ReadAllLines "RELEASE_NOTES.md" |> parseAllReleaseNotes
 
 
 // --------------------------------------------------------------------------------------
-// Building and packaging
+// Common
 // --------------------------------------------------------------------------------------
 
 let pkgDir = "temp" </> "pkg"
 let hostPkgDir = "src" </> "FabricHost" </> "pkg" </> "Release"
 let buildDir = "temp" </> "build"
+let unitTestBuildDir = "temp" </> "unitTest"
 
 Target "Clean" (fun _ ->
-    CleanDirs [buildDir; pkgDir]
+    CleanDirs [unitTestBuildDir; buildDir; pkgDir]
 )
+
+// --------------------------------------------------------------------------------------
+// Building and packaging
+// --------------------------------------------------------------------------------------
+
 
 Target "AssemblyInfo" (fun _ ->
     let getAssemblyInfoAttributes projectName =
@@ -75,8 +80,26 @@ Target "Package" (fun _ ->
     |> ignore
 
     CopyDir pkgDir hostPkgDir  (fun _ -> true)
-    
 )
+
+// --------------------------------------------------------------------------------------
+// Unit Tests
+// --------------------------------------------------------------------------------------
+
+Target "BuildUnitTest" (fun _ ->
+    !! "test/*/*UnitTests.fsproj"
+    |> MSBuildRelease unitTestBuildDir "Rebuild"
+    |> ignore
+)
+
+Target "RunUnitTest" (fun _ ->
+    let errorCode = 
+        !! "temp/unitTest/*UnitTests.exe"
+        |> Seq.map (fun p -> shellExec {defaultParams with Program = p})
+        |> Seq.sum
+    if errorCode <> 0 then failwith "Error in tests"
+)
+
 
 // --------------------------------------------------------------------------------------
 // PowerShell Helpers
@@ -110,6 +133,7 @@ let modules = [| @"C:/Program Files/Microsoft SDKs/Service Fabric/Tools/PSModule
 
 let remove runspace =
     let version = if releaseHistory.Length > 1 then releaseHistory.Tail.Head.AssemblyVersion else "1.0.0"
+    let applicationType = "CalculatorApplicationType" // this can be read from ApplicationManifest.xml
 
     try
         "Remove-ServiceFabricApplication"
@@ -170,8 +194,13 @@ Target "DeployLocal" (fun _ -> deploy localRunspace)
 Target "Default" DoNothing
 
 "Clean"
+  ==> "BuildUnitTest"
+  ==> "RunUnitTest"
+
+"Clean"
   ==> "AssemblyInfo"
   ==> "SetVersion"
+  ==> "RunUnitTest"
   ==> "Package"
 
 "RemoveFromLocal"

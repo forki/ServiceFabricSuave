@@ -6,3 +6,5 @@ source https://www.nuget.org/api/v2/
 nuget Microsoft.ServiceFabric.Actors
 nuget Suave
 nuget FAKE.x64
+nuget Fuchu
+nuget Fuchu.FsCheck
