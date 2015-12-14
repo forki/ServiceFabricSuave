@@ -223,7 +223,7 @@ Target "DeployLocal" (fun _ -> deploy localRunspace)
 
 Target "ZipRelease" (fun _ ->
     Directory.GetFiles(pkgDir, "*.*", SearchOption.AllDirectories)
-    |> Zip pkgDir ("temp" </> (project + ".sfpkg"))
+    |> Zip pkgDir ("temp" </> (project + ".zip"))
 )
 
 Target "Release" (fun _ ->
@@ -251,7 +251,7 @@ Target "Release" (fun _ ->
     // release on github
     createClient user pw
     |> createDraft gitOwner gitName release.NugetVersion (release.SemVer.PreRelease <> None) release.Notes
-    |> uploadFile (sprintf "temp/%s.sfpkg)" project)
+    |> uploadFile (sprintf "temp/%s.zip)" project)
     |> releaseDraft
     |> Async.RunSynchronously
 )
