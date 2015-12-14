@@ -16,13 +16,18 @@ open System.IO
 open System.Management.Automation
 open System.Management.Automation.Runspaces
 
-let applicationName = "fabric:/CalculatorService"
-let applicationType = "CalculatorServiceType"
-let applicationVersion = "1.0.0.0" //TODO: THIS SHOULD BE HANDLED SMARTER
-let release = LoadReleaseNotes "RELEASE_NOTES.md"
+// --------------------------------------------------------------------------------------
+// Set parameters
+// --------------------------------------------------------------------------------------
 
 let project = "CalculatorService"
 let summary = "Demo of F# Suave based Service Fabric stateless service"
+
+let applicationName = "fabric:/CalculatorService"
+let applicationType = "CalculatorApplicationType" // this can be read from ApplicationManifest.xml
+
+let release = LoadReleaseNotes "RELEASE_NOTES.md"
+let releaseHistory = File.ReadAllLines "RELEASE_NOTES.md" |> parseAllReleaseNotes
 
 
 // --------------------------------------------------------------------------------------
@@ -58,12 +63,19 @@ Target "AssemblyInfo" (fun _ ->
     |> Seq.iter (fun (projFileName, projectName, folderName, attributes) ->  CreateFSharpAssemblyInfo (folderName @@ "AssemblyInfo.fs") attributes)
 )
 
+Target "SetVersion" (fun _ -> 
+    !! "src/*/*/ServiceManifest.xml"
+    ++ "src/*/ApplicationManifest.xml"
+    |> RegexReplaceInFilesWithEncoding "Version=\"([\d\.]*)\"" (sprintf "Version=\"%s\"" release.AssemblyVersion) Text.Encoding.UTF8
+)
+
 Target "Package" (fun _ ->
     !! "src/*/*.sfproj"
     |> MSBuildRelease buildDir "Package"
     |> ignore
 
     CopyDir pkgDir hostPkgDir  (fun _ -> true)
+    
 )
 
 // --------------------------------------------------------------------------------------
@@ -97,6 +109,8 @@ let psAddParameter (n,v) (ps : PowerShell) =
 let modules = [| @"C:/Program Files/Microsoft SDKs/Service Fabric/Tools/PSModule/ServiceFabricSDK/ServiceFabricSDK.psm1" |]
 
 let remove runspace =
+    let version = if releaseHistory.Length > 1 then releaseHistory.Tail.Head.AssemblyVersion else "1.0.0"
+
     try
         "Remove-ServiceFabricApplication"
         |> psCommand
@@ -110,7 +124,7 @@ let remove runspace =
         "Unregister-ServiceFabricApplicationType"
         |> psCommand
         |> psAddParameter ("ApplicationTypeName", applicationType)
-        |> psAddParameter ("ApplicationTypeVersion", applicationVersion)
+        |> psAddParameter ("ApplicationTypeVersion", version)
         |> psAddParameter ("Force", SwitchParameter.Present)
         |> invokeWithRunspace runspace
         |> ignore
@@ -157,6 +171,7 @@ Target "Default" DoNothing
 
 "Clean"
   ==> "AssemblyInfo"
+  ==> "SetVersion"
   ==> "Package"
 
 "RemoveFromLocal"
