@@ -14,6 +14,7 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "CalculatorService", "src\Ca
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{73972869-BC4C-49E6-BF8A-46091D76E72C}"
 	ProjectSection(SolutionItems) = preProject
+		appveyor.yml = appveyor.yml
 		build.cmd = build.cmd
 		build.fsx = build.fsx
 		RELEASE_NOTES.md = RELEASE_NOTES.md
