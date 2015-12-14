@@ -11,7 +11,7 @@
     <None Include="Scripts\Deploy-FabricApplication.ps1" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\SuaveHost\SuaveHost.fsproj" />
+    <ProjectReference Include="..\CalculatorService\CalculatorService.fsproj" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="ApplicationParameters\Cloud.xml" />

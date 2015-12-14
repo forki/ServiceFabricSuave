@@ -7,11 +7,11 @@
     <ProjectGuid>bf06b852-a177-4d39-b14f-1753c7bfbb86</ProjectGuid>
     <OutputType>Exe</OutputType>
     <RootNamespace>SuaveHost</RootNamespace>
-    <AssemblyName>SuaveHost</AssemblyName>
+    <AssemblyName>CalculatorService</AssemblyName>
     <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <TargetFSharpCoreVersion>4.4.0.0</TargetFSharpCoreVersion>
-    <Name>SuaveHost</Name>
+    <Name>CalculatorService</Name>
     <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup>
@@ -68,8 +68,8 @@
     <None Include="paket.references" />
     <Content Include="PackageRoot\ServiceManifest.xml" />
     <Content Include="PackageRoot\Config\Settings.xml" />
-    <None Include="Scripts\load-references-debug.fsx" />
-    <None Include="Scripts\load-project-debug.fsx" />
+    <Compile Include="ServicesCommon.fs" />
+    <Compile Include="Services.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>

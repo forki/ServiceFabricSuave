@@ -2,7 +2,7 @@
 <PublishProfile xmlns="http://schemas.microsoft.com/2015/05/fabrictools">
   <!-- ClusterConnectionParameters allows you to specify the PowerShell parameters to use when connecting to the Service Fabric cluster.
        Valid parameters are any that are accepted by the Connect-ServiceFabricCluster cmdlet.
-       
+
        For a remote cluster, you would need to specify the appropriate parameters for that specific cluster.
          For example: <ClusterConnectionParameters ConnectionEndpoint="mycluster.westus.cloudapp.azure.com:19000" />
 
@@ -15,6 +15,6 @@
                                     StoreLocation="CurrentUser"
                                     StoreName="My" />
   -->
-  <ClusterConnectionParameters ConnectionEndpoint="** Please specify a ConnectionEndpoint in the publish profile. **" />
+  <ClusterConnectionParameters ConnectionEndpoint="party38787.westus.cloudapp.azure.com:19000" />
   <ApplicationParameterFile Path="..\ApplicationParameters\Cloud.xml" />
 </PublishProfile>

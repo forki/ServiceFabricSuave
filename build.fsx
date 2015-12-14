@@ -16,53 +16,111 @@ open System.IO
 open System.Management.Automation
 open System.Management.Automation.Runspaces
 
-Target "StartLocalCluster" (fun _ ->
+let applicationName = "fabric:/CalculatorService"
+let applicationType = "CalculatorServiceType"
+let applicationVersion = "1.0.0.0" //TODO: THIS SHOULD BE HANDLED SMARTER
+
+let pkgDir = "temp" </> "pkg"
+let hostPkgDir = "src" </> "FabricHost" </> "pkg" </> "Release"
+let buildDir = "temp" </> "build"
+
+Target "Clean" (fun _ ->
+    CleanDirs [buildDir; pkgDir]
+)
+
+Target "Package" (fun _ ->
+    !! "src/*/*.sfproj"
+    |> MSBuildRelease buildDir "Package"
+    |> ignore
+
+    CopyDir pkgDir hostPkgDir  (fun _ -> true)
+)
+
+//PowerShell Helpers
+
+let invoke (modules : string []) (ps : PowerShell) =
     let initial = InitialSessionState.CreateDefault ()
-    initial.ImportPSModule [| @"C:/Program Files/Microsoft SDKs/Service Fabric/Tools/Scripts/ClusterSetupUtilities.psm1"
-                              @"C:/Program Files/Microsoft SDKs/Service Fabric/Tools/Scripts/DefaultLocalClusterSetup.psm1"
-                           |]
+    initial.ImportPSModule modules
     let runspace = RunspaceFactory.CreateRunspace initial
     runspace.Open ()
-    let ps = PowerShell.Create().AddCommand "Set-LocalClusterReady"
     ps.Runspace <- runspace
+    ps.Invoke() |> Seq.iter (printfn "%A")
+    runspace
+
+let invokeWithRunspace runspace (ps : PowerShell) =
+    ps.Runspace <- runspace
+    ps.Invoke() |> Seq.iter (printfn "%A")
+    runspace
+
+let psCommand (command : string) =
+    PowerShell.Create().AddCommand command
+
+let psAddParameter (n,v) (ps : PowerShell) =
+    ps.AddParameter(n,v)
+
+//Service Fabric Helpers
+
+let modules = [| @"C:/Program Files/Microsoft SDKs/Service Fabric/Tools/PSModule/ServiceFabricSDK/ServiceFabricSDK.psm1" |]
+let localRunspace =
+    "Connect-ServiceFabricCluster"
+    |> psCommand
+    |> psAddParameter ("ConnectionEndpoint", "localhost:19000")
+    |> invoke modules
+
+let remove runspace =
     try
-        ps.Invoke() |> Seq.iter (printfn "%O")
+        "Remove-ServiceFabricApplication"
+        |> psCommand
+        |> psAddParameter ("ApplicationName", applicationName)
+        |> psAddParameter ("Force", SwitchParameter.Present)
+        |> invokeWithRunspace runspace
+        |> ignore
     with
-       | _ -> ps.Streams.Error |> Seq.iter (printfn "%O")
+    | ex -> traceImportant ex.Message
+    try
+        "Unregister-ServiceFabricApplicationType"
+        |> psCommand
+        |> psAddParameter ("ApplicationTypeName", applicationType)
+        |> psAddParameter ("ApplicationTypeVersion", applicationVersion)
+        |> psAddParameter ("Force", SwitchParameter.Present)
+        |> invokeWithRunspace runspace
+        |> ignore
+    with
+    | ex -> traceImportant ex.Message
+
+let deploy runspace =
+    "Publish-NewServiceFabricApplication"
+        |> psCommand
+        |> psAddParameter ("ApplicationPackagePath", pkgDir)
+        |> psAddParameter ("ApplicationName", applicationName)
+        |> invokeWithRunspace runspace
+        |> ignore
+
+//Local Deployment
+
+Target "StartLocalCluster" (fun _ ->
+    let modules = [| @"C:/Program Files/Microsoft SDKs/Service Fabric/Tools/Scripts/ClusterSetupUtilities.psm1"
+                     @"C:/Program Files/Microsoft SDKs/Service Fabric/Tools/Scripts/DefaultLocalClusterSetup.psm1"
+                  |]
+    "Set-LocalClusterReady"
+    |> psCommand
+    |> invoke modules
+    |> ignore
 )
 
-let (=!>) a b = a, (b |> unbox<obj>)
+Target "RemoveFromLocal" (fun _ -> remove localRunspace)
 
-Target "DeployLocal" (fun _ ->
-    let runspace = RunspaceFactory.CreateRunspace ()
-    runspace.Open ()
-    let pipeline = runspace.CreatePipeline ()
-
-    let ps =
-        [ "ApplicationPackagePath" =!> "src\FabricHost\pkg\Debug"
-          "PublishProfileFile" =!> "src\FabricHost\PublishProfiles\Local.xml"
-          "DeployOnly" =!> false
-          "UnregisterUnusedApplicationVersionsAfterUpgrade" =!> false
-          "ForceUpgrade" =!> false
-          "OverwriteBehavior" =!> "SameAppTypeAndVersion"
-          "ErrorAction" =!> "Stop"
-        ] |> List.fold (fun (acc : PowerShell) (k,v) -> acc.AddParameter(k,v) ) (PowerShell.Create().AddScript("src\FabricHost\Scripts\Deploy-FabricApplication.ps1"))
-
-    ps.Runspace <- runspace
-    try
-        ps.Invoke() |> Seq.iter (printfn "%O")
-        printfn "OK"
-    with
-    | ex ->
-        traceError "ERROR:\n"
-        ps.Streams.Error |> Seq.iter (sprintf "%O\n" >> traceError)
-        raise ex
-)
-
+Target "DeployLocal" (fun _ -> deploy localRunspace)
 
 Target "Default" DoNothing
 
-"StartLocalCluster"
+"Clean"
+  ==> "Package"
+
+"RemoveFromLocal"
+  ==> "DeployLocal"
+
+"Package"
   ==> "DeployLocal"
   ==> "Default"
 

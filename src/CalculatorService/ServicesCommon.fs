@@ -1,15 +1,17 @@
-﻿open Suave
+﻿module ServicesCommon
+
+open Suave
 open Suave.Http.Successful
 open Suave.Types
 open Suave.Web
-open System.Fabric 
+open System.Fabric
 open System.Threading
 open System.Threading.Tasks
 open Suave.Http
 open Microsoft.ServiceFabric.Services.Runtime
 open Microsoft.ServiceFabric.Services.Communication.Runtime
- 
-type SuaveService() =
+
+type SuaveService(app) =
     inherit StatelessService()
 
     let buildConfig portToUse =
@@ -31,16 +33,9 @@ type SuaveService() =
                             let config =
                                 parameters.CodePackageActivationContext.GetEndpoint("SuaveEndpoint").Port
                                 |> buildConfig
-                            let starting, server = startWebServerAsync config (OK "Hello from Service Fabric!")
+                            let starting, server = startWebServerAsync config app
                             Async.Start(server, cancellationToken)
                             do! starting |> Async.Ignore
                             return (defaultConfig.bindings.Head.ToString())
                         } |> Async.StartAsTask
                 }) }
-
-[<EntryPoint>]
-let main argv =
-    use fabricRuntime = FabricRuntime.Create()
-    fabricRuntime.RegisterServiceType("SuaveApiType", typeof<SuaveService>)
-    Thread.Sleep Timeout.Infinite
-    0

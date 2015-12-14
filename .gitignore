@@ -213,3 +213,4 @@ ModelManifest.xml
 /.paket/paket.exe
 /.fake
 /.vscode
+/temp
