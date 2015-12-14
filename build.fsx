@@ -159,7 +159,8 @@ let psAddParameter (n,v) (ps : PowerShell) =
 // Service Fabric Helpers
 // --------------------------------------------------------------------------------------
 
-let modules = [| @"C:/Program Files/Microsoft SDKs/Service Fabric/Tools/PSModule/ServiceFabricSDK/ServiceFabricSDK.psm1" |]
+let programFiles = environVar "ProgramFiles"
+let modules = [| programFiles + @"/Microsoft SDKs/Service Fabric/Tools/PSModule/ServiceFabricSDK/ServiceFabricSDK.psm1" |]
 
 let remove runspace =
     let version = if releaseHistory.Length > 1 then releaseHistory.Tail.Head.AssemblyVersion else "1.0.0"
@@ -205,8 +206,8 @@ let localRunspace =
 
 Target "StartLocalCluster" (fun _ ->
     let modules =
-        [|  @"C:/Program Files/Microsoft SDKs/Service Fabric/Tools/Scripts/ClusterSetupUtilities.psm1"
-            @"C:/Program Files/Microsoft SDKs/Service Fabric/Tools/Scripts/DefaultLocalClusterSetup.psm1" |]
+        [| programFiles + @"/Microsoft SDKs/Service Fabric/Tools/Scripts/ClusterSetupUtilities.psm1"
+           programFiles + @"/Microsoft SDKs/Service Fabric/Tools/Scripts/DefaultLocalClusterSetup.psm1" |]
     "Set-LocalClusterReady"
     |> psCommand
     |> invoke modules
