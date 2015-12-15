@@ -223,17 +223,17 @@ let getCluster () =
 
 Target "StartLocalCluster" (fun _ ->
     traceHeader "Start Cluster"
-    programFiles + @"/Microsoft SDKs/Service Fabric/ClusterSetup/DevClusterSetup.ps1"
-    |> psScript
-    |> invoke [||]
-    |> ignore
-    // let modules =
-    //     [| programFiles + @"/Microsoft SDKs/Service Fabric/Tools/Scripts/ClusterSetupUtilities.psm1"
-    //        programFiles + @"/Microsoft SDKs/Service Fabric/Tools/Scripts/DefaultLocalClusterSetup.psm1" |]
-    // "Set-LocalClusterReady"
-    // |> psCommand
-    // |> invoke modules
+    // programFiles + @"/Microsoft SDKs/Service Fabric/ClusterSetup/DevClusterSetup.ps1"
+    // |> psScript
+    // |> invoke [||]
     // |> ignore
+    let modules =
+        [| programFiles + @"/Microsoft SDKs/Service Fabric/Tools/Scripts/ClusterSetupUtilities.psm1"
+           programFiles + @"/Microsoft SDKs/Service Fabric/Tools/Scripts/DefaultLocalClusterSetup.psm1" |]
+    "Set-LocalClusterReady"
+    |> psCommand
+    |> invoke modules
+    |> ignore
 )
 
 Target "RemoveFromLocal" (fun _ ->
