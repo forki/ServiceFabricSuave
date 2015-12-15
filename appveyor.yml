@@ -1,9 +1,3 @@
-install:
-  - Webpicmd /install /products:"MicrosoftAzure-ServiceFabric" /AcceptEULA
-before_build:
-  - cmd: SET PATH=%PATH%;C:\\Program Files\\Microsoft Service Fabric\\bin\\Fabric\\Fabric.Code
 build_script:
-  - cmd: build.cmd RunIntegrationTest
+  - cmd: build.cmd RunUnitTest
 test: off
-on_finish:
-- ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
